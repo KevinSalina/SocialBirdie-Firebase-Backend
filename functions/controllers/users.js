@@ -1,8 +1,9 @@
 require('dotenv').config()
 const axios = require('axios')
 const { db, admin, bucket } = require('../config/admin')
-const { validateSignUp, validateLogin } = require('../utilities/validators')
+const { validateSignUp, validateLogin, reduceUserDetails } = require('../utilities/validators')
 
+// Sign Up User
 const registerUser = async (req, res) => {
   try {
     const newUser = {
@@ -17,10 +18,10 @@ const registerUser = async (req, res) => {
     const stockUserImage = 'stockUserImage.png'
 
     // Check if username is already taken
-    const checkUsername = await db.doc(`/users/${newUser.username}`).get()
+    const checkUsername = await db.collection('users').doc(`${newUser.username}`).get()
     if (checkUsername.exists) return res.status(400).json({ username: 'This username if already taken' })
 
-    // Create new user
+    // Create new user Authentication in firebase app
     const user = await admin.auth().createUser(newUser)
 
     // Create new user object to save in db
@@ -34,7 +35,7 @@ const registerUser = async (req, res) => {
     }
 
     // Save new user in user collection
-    await db.doc(`/users/${newUser.username}`).set(userCredentials)
+    await db.collection('users').doc(`${newUser.username}`).set(userCredentials)
 
     return res.status(201).json({ message: `user ${user.uid} sign up successfully` })
 
@@ -47,6 +48,8 @@ const registerUser = async (req, res) => {
   }
 }
 
+
+// Login User
 const loginUser = async (req, res) => {
   const user = {
     ...req.body,
@@ -78,6 +81,46 @@ const loginUser = async (req, res) => {
 
 }
 
+// Lets user add bio and location
+const addUserDetails = async (req, res) => {
+  let userDetails = reduceUserDetails(req.body)
+
+  try {
+    await db.collection('users').doc(`${req.body.username}`).update(userDetails)
+
+    return res.status(200).json({ message: 'Details added successfully' })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ error: err.code })
+  }
+}
+
+// Get own user details
+const getAuthUserData = async (req, res) => {
+  // Set empt object to store current user data in. Return at end
+  let userData = {};
+
+  try {
+    const userDoc = await db.collection('users').doc(`${req.body.username}`).get()
+    if (userDoc.exists) {
+      userData.credentials = userDoc.data()
+    }
+
+    // Get user likes
+    const userLikes = await db.collection('likes').where('username', '==', req.body.username).get()
+    userData.likes = []
+    userLikes.forEach(doc => {
+      userData.likes.push(doc.data())
+    })
+
+    return res.json(userData)
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ error: err.code })
+  }
+}
+
+// Upload profile image for user
 const uploadImage = async (req, res) => {
   const Busboy = require('busboy')
   const path = require('path')
@@ -136,4 +179,4 @@ const uploadImage = async (req, res) => {
   }
 }
 
-module.exports = { registerUser, loginUser, uploadImage }
+module.exports = { registerUser, loginUser, uploadImage, addUserDetails, getAuthUserData }
