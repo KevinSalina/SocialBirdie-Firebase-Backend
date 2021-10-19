@@ -7,7 +7,7 @@ const app = express()
 
 // Require Routes
 const { getAllRounds, createRound } = require('./controllers/rounds')
-const { registerUser, loginUser, uploadImage } = require('./controllers/users')
+const { registerUser, loginUser, uploadImage, addUserDetails, getAuthUserData } = require('./controllers/users')
 
 // Require Middlewares
 const { FBAuth } = require('./middlewares/fb-auth')
@@ -20,6 +20,8 @@ app.post('/round', FBAuth, createRound)
 app.post('/signup', registerUser)
 app.post('/login', loginUser)
 app.post('/user/image', FBAuth, uploadImage)
+app.post('/user', FBAuth, addUserDetails)
+app.get('/user', FBAuth, getAuthUserData)
 
 // Export all routes with /api
 exports.api = functions.https.onRequest(app);
