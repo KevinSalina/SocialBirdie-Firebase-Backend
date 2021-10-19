@@ -1,5 +1,6 @@
 require('dotenv').config()
 const axios = require('axios')
+const functions = require('firebase-functions')
 const { db, admin, bucket } = require('../config/admin')
 const { validateSignUp, validateLogin, reduceUserDetails } = require('../utilities/validators')
 
@@ -29,7 +30,7 @@ const registerUser = async (req, res) => {
       username: newUser.username,
       email: newUser.email,
       createdAt: new Date().toISOString(),
-      imageUrl: `https://firebasestorage.googleapis.com/v0/b/${process.env.FIREBASE_BUCKET}/o/${stockUserImage}?alt=media`,
+      imageUrl: `https://firebasestorage.googleapis.com/v0/b/${functions.config().my_keys.bucket_key || process.env.FIREBASE_BUCKET}/o/${stockUserImage}?alt=media`,
       userId: user.uid
 
     }
@@ -62,7 +63,7 @@ const loginUser = async (req, res) => {
 
 
   try {
-    const results = await axios.post(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.FIREBASE_API}`, user)
+    const results = await axios.post(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${functions.config().my_keys.api_key || process.env.FIREBASE_API}`, user)
     res.json(results.data)
   } catch (err) {
     if (err.response) {
@@ -164,7 +165,7 @@ const uploadImage = async (req, res) => {
       })
 
       // After saving to storave bucket, get image URL and add it to user doc.
-      const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${process.env.FIREBASE_BUCKET}/o/${imageFileName}?alt=media`
+      const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${functions.config().my_keys.bucket_key || process.env.FIREBASE_BUCKET}/o/${imageFileName}?alt=media`
       await db.doc(`/users/${req.body.username}`).update({ imageUrl })
 
       return res.json({ message: 'Image uploaded successfully' })

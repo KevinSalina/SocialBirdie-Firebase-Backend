@@ -17,8 +17,8 @@ app.get('/rounds', getAllRounds)
 app.post('/round', FBAuth, createRound)
 app.get('/round/:roundId', getRoundById)
 app.post('/round/:roundId/comment', FBAuth, createComment)
-app.get('/round/:roundId/like', FBAuth, likeRound)
-app.get('/round/:roundId/unlike', FBAuth, unlikeRound)
+app.post('/round/:roundId/like', FBAuth, likeRound)
+app.post('/round/:roundId/unlike', FBAuth, unlikeRound)
 app.delete('/round/:roundId', FBAuth, deleteRound)
 
 // User Routes
