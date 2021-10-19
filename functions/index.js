@@ -5,8 +5,8 @@ const express = require('express')
 
 const app = express()
 
-// Require Routes
-const { getAllRounds, createRound, getRoundById, createComment } = require('./controllers/rounds')
+// Require Controllers
+const { getAllRounds, createRound, deleteRound, getRoundById, createComment, likeRound, unlikeRound } = require('./controllers/rounds')
 const { registerUser, loginUser, uploadImage, addUserDetails, getAuthUserData } = require('./controllers/users')
 
 // Require Middlewares
@@ -17,7 +17,9 @@ app.get('/rounds', getAllRounds)
 app.post('/round', FBAuth, createRound)
 app.get('/round/:roundId', getRoundById)
 app.post('/round/:roundId/comment', FBAuth, createComment)
-// TODO: deleteRound, likeRound, unlikeScream
+app.get('/round/:roundId/like', FBAuth, likeRound)
+app.get('/round/:roundId/unlike', FBAuth, unlikeRound)
+app.delete('/round/:roundId', FBAuth, deleteRound)
 
 // User Routes
 app.post('/signup', registerUser)
