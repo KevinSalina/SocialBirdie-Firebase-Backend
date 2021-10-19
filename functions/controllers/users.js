@@ -1,6 +1,6 @@
 require('dotenv').config()
 const axios = require('axios')
-const { db, admin } = require('../config/admin')
+const { db, admin, bucket } = require('../config/admin')
 const { validateSignUp, validateLogin } = require('../utilities/validators')
 
 const registerUser = async (req, res) => {
@@ -14,6 +14,8 @@ const registerUser = async (req, res) => {
     console.log(valid)
     if (!valid) return res.status(400).json(errors)
 
+    const stockUserImage = 'stockUserImage.png'
+
     // Check if username is already taken
     const checkUsername = await db.doc(`/users/${newUser.username}`).get()
     if (checkUsername.exists) return res.status(400).json({ username: 'This username if already taken' })
@@ -26,6 +28,7 @@ const registerUser = async (req, res) => {
       username: newUser.username,
       email: newUser.email,
       createdAt: new Date().toISOString(),
+      imageUrl: `https://firebasestorage.googleapis.com/v0/b/${process.env.FIREBASE_BUCKET}/o/${stockUserImage}?alt=media`,
       userId: user.uid
 
     }
@@ -75,4 +78,62 @@ const loginUser = async (req, res) => {
 
 }
 
-module.exports = { registerUser, loginUser }
+const uploadImage = async (req, res) => {
+  const Busboy = require('busboy')
+  const path = require('path')
+  const os = require('os')
+  const fs = require('fs')
+
+  // Start new instance of Busboy to handle img files
+  const busboy = new Busboy({ headers: req.headers })
+
+  let imageFileName;
+  let imageToBeUploaded = {}
+
+  try {
+    busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
+      if (mimetype !== 'image/jpeg' && mimetype !== 'image/png') return res.status(400).json({ error: 'Please upload image file type' })
+      console.log(fieldname, filename, mimetype)
+      // Get extension 'image.jpg'. Need .jpg
+      const imageExtension = filename.split('.').pop()
+
+      // Set a random file name. Ex 78564.jpg
+      imageFileName = `${Math.round(Math.random() * 100000000)}.${imageExtension}`
+
+      // Get file path
+      const filepath = path.join(os.tmpdir(), imageFileName);
+
+      // Create image to be uploaded
+      imageToBeUploaded = { filepath, mimetype }
+
+      file.pipe(fs.createWriteStream(filepath))
+    })
+
+    // On Finish - save image to storage bucket
+    busboy.on('finish', async () => {
+      await bucket.upload(imageToBeUploaded.filepath, {
+        resumable: false,
+        metadata: {
+          metadata: {
+            contentType: imageToBeUploaded.mimetype
+          }
+        }
+      })
+
+      // After saving to storave bucket, get image URL and add it to user doc.
+      const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${process.env.FIREBASE_BUCKET}/o/${imageFileName}?alt=media`
+      await db.doc(`/users/${req.body.username}`).update({ imageUrl })
+
+      return res.json({ message: 'Image uploaded successfully' })
+
+    })
+
+    busboy.end(req.rawBody)
+
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: err.code })
+  }
+}
+
+module.exports = { registerUser, loginUser, uploadImage }

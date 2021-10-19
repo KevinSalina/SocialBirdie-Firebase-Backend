@@ -15,7 +15,6 @@ const FBAuth = async (req, res, next) => {
 
     // If we have token, and it is verified, add to request body so we can use in response
     const verifyToken = await admin.auth().verifyIdToken(idToken)
-    console.group(verifyToken)
     req.body.user = verifyToken
 
     // Get assocaited user, and add to request body
