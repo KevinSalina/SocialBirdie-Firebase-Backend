@@ -20,6 +20,7 @@ const FBAuth = async (req, res, next) => {
     // Get assocaited user, and add to request body
     const user = await db.collection('users').where('userId', '==', verifyToken.uid).limit(1).get()
     req.body.username = user.docs[0].data().username
+    req.body.imageUrl = user.docs[0].data().imageUrl
 
     return next()
 

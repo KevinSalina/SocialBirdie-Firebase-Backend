@@ -6,7 +6,7 @@ const express = require('express')
 const app = express()
 
 // Require Routes
-const { getAllRounds, createRound } = require('./controllers/rounds')
+const { getAllRounds, createRound, getRoundById, createComment } = require('./controllers/rounds')
 const { registerUser, loginUser, uploadImage, addUserDetails, getAuthUserData } = require('./controllers/users')
 
 // Require Middlewares
@@ -15,6 +15,9 @@ const { FBAuth } = require('./middlewares/fb-auth')
 // Golf Round Routes
 app.get('/rounds', getAllRounds)
 app.post('/round', FBAuth, createRound)
+app.get('/round/:roundId', getRoundById)
+app.post('/round/:roundId/comment', FBAuth, createComment)
+// TODO: deleteRound, likeRound, unlikeScream
 
 // User Routes
 app.post('/signup', registerUser)
