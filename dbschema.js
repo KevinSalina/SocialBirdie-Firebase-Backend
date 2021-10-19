@@ -29,6 +29,12 @@ let dbSchema = {
       body: 'This is a comment!',
       createdAt: '2021-10-19T16:40:50.146Z'
     }
+  ],
+  likes: [
+    {
+      username: 'user',
+      roundId: '12345'
+    }
   ]
 };
 
