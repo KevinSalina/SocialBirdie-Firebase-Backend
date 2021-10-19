@@ -150,15 +150,15 @@ app.post('/login', async (req, res) => {
   } catch (err) {
     if (err.response) {
       console.log('1st', err.response.data)
-      if (err.response.data.error.message === "EMAIL_NOT_FOUND") errors.email = 'Incorrect Email'
-      if (err.response.data.error.message === "INVALID_PASSWORD") errors.password = 'Incorrect Password'
+      if (err.response.data.error.message === "EMAIL_NOT_FOUND") errors.email = 'Incorrect Email. Please try again'
+      if (err.response.data.error.message === "INVALID_PASSWORD") errors.password = 'Incorrect Password. PLease try again'
       return res.status(400).json(errors)
     } else if (err.request) {
       console.log('2nd', err.request)
       res.send(err.request)
     } else {
       console.log('Error', err.message)
-      res.send(err.message)
+      res.status(500).json(err.message)
     }
   }
 
