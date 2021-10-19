@@ -1,4 +1,4 @@
-let db = {
+let dbSchema = {
   users: [
     {
       userId: 'CkYKi9mL71XJZaAAdPSV2AEMmL92',
@@ -21,10 +21,18 @@ let db = {
       likeCount: 5,
       commentCount: 2
     }
+  ],
+  comments: [
+    {
+      username: 'user',
+      roundId: '12345',
+      body: 'This is a comment!',
+      createdAt: '2021-10-19T16:40:50.146Z'
+    }
   ]
 };
 
-let userDetails = {
+let userReduxDetails = {
   // Redux data
   credentials: {
     userId,
