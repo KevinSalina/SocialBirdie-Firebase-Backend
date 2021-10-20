@@ -23,6 +23,7 @@ const registerUser = async (req, res) => {
 
     // Create new user Authentication in firebase app
     const user = await admin.auth().createUser(newUser)
+    // const idToken = await admin.auth().createCustomToken(user.uid)
 
     // Create new user object to save in db
     const userCredentials = {
@@ -36,12 +37,18 @@ const registerUser = async (req, res) => {
     // Save new user in user collection
     await db.collection('users').doc(`${newUser.username}`).set(userCredentials)
 
-    return res.status(201).json({ message: `user ${user.uid} sign up successfully` })
+    const loginInUser = await axios.post('https://us-central1-socialbirdie-d941f.cloudfunctions.net/api/login', { email: newUser.email, password: newUser.password })
+    return res.status(200).json(loginInUser.data)
 
   } catch (err) {
     console.error(err)
     if (err.message === 'The email address is already in use by another account.') {
-      return res.status(400).json({ email: err.message })
+      errors.email = err.message
+      return res.status(400).json(errors)
+    }
+    if (err.code === 'auth/invalid-password') {
+      errors.password = err.message
+      return res.status(400).json(errors)
     }
     return res.status(500).json({ general: 'Something went wrong, please try again ' })
   }

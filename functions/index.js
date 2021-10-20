@@ -3,8 +3,11 @@ require('dotenv').config()
 const functions = require('firebase-functions')
 const express = require('express')
 const { db } = require('./config/admin')
+const cors = require('cors')
 
 const app = express()
+
+app.use(cors())
 
 // Require Controllers
 const { getAllRounds, createRound, deleteRound, getRoundById, createComment, likeRound, unlikeRound } = require('./controllers/rounds')
