@@ -96,7 +96,7 @@ const createComment = async (req, res) => {
   const { roundId } = req.params
   const { body, username, imageUrl } = req.body
   // Validate there is comment text
-  if (body.trim() === '') return res.status(400).json({ error: 'Please enter comment' })
+  if (body.trim() === '') return res.status(400).json({ comment: 'Please enter comment' })
   const newComment = {
     body,
     username,
