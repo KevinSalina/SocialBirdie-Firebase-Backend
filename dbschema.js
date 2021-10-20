@@ -35,6 +35,16 @@ let dbSchema = {
       username: 'user',
       roundId: '12345'
     }
+  ],
+  notifications: [
+    {
+      recipient: 'user99',
+      sender: 'user1',
+      read: 'true | false',
+      roundId: 'ki4893fgdbsj3810',
+      type: 'like | comment',
+      createdAt: '2021-03-15T16:40:50.126Z'
+    }
   ]
 };
 

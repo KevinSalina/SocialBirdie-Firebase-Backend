@@ -94,7 +94,7 @@ const deleteRound = async (req, res) => {
 // Create a new comment on a round. Protected
 const createComment = async (req, res) => {
   const { roundId } = req.params
-  const { body, username } = req.body
+  const { body, username, imageUrl } = req.body
   // Validate there is comment text
   if (body.trim() === '') return res.status(400).json({ error: 'Please enter comment' })
   const newComment = {
@@ -102,7 +102,7 @@ const createComment = async (req, res) => {
     username,
     roundId,
     createdAt: new Date().toISOString(),
-    userImage: req.body.imageUrl
+    userImage: imageUrl
   }
   try {
     // Check if round exists
