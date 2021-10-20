@@ -1,5 +1,6 @@
 require('dotenv').config()
 const axios = require('axios')
+const functions = require('firebase-functions')
 const { db, admin, bucket } = require('../config/admin')
 const { validateSignUp, validateLogin, reduceUserDetails } = require('../utilities/validators')
 
@@ -12,7 +13,6 @@ const registerUser = async (req, res) => {
 
     // Validate Data
     const { valid, errors } = validateSignUp(newUser)
-    console.log(valid)
     if (!valid) return res.status(400).json(errors)
 
     const stockUserImage = 'stockUserImage.png'
@@ -29,9 +29,8 @@ const registerUser = async (req, res) => {
       username: newUser.username,
       email: newUser.email,
       createdAt: new Date().toISOString(),
-      imageUrl: `https://firebasestorage.googleapis.com/v0/b/${process.env.FIREBASE_BUCKET}/o/${stockUserImage}?alt=media`,
+      imageUrl: `https://firebasestorage.googleapis.com/v0/b/${functions.config().my_keys.bucket_key ? functions.config().my_keys.bucket_key : process.env.FIREBASE_BUCKET}/o/${stockUserImage}?alt=media`,
       userId: user.uid
-
     }
 
     // Save new user in user collection
@@ -44,7 +43,7 @@ const registerUser = async (req, res) => {
     if (err.message === 'The email address is already in use by another account.') {
       return res.status(400).json({ email: err.message })
     }
-    return res.status(500).json({ error: err.message })
+    return res.status(500).json({ general: 'Something went wrong, please try again ' })
   }
 }
 
@@ -62,7 +61,7 @@ const loginUser = async (req, res) => {
 
 
   try {
-    const results = await axios.post(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.FIREBASE_API}`, user)
+    const results = await axios.post(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${functions.config().my_keys.api_key ? functions.config().my_keys.api_key : process.env.FIREBASE_API}`, user)
     res.json(results.data)
   } catch (err) {
     if (err.response) {
@@ -95,6 +94,34 @@ const addUserDetails = async (req, res) => {
   }
 }
 
+// Get user details by username
+const getUserByUsername = async (req, res) => {
+  const { username } = req.params
+
+  let userData = {}
+
+  try {
+    const user = await db.collection('users').doc(`${username}`).get()
+    if (!user.exists) return res.status(404).json({ error: 'User not found' })
+    userData.user = user.data()
+
+    const rounds = await db.collection('rounds').where('username', '==', username).orderBy('createdAt', 'desc').get()
+    userData.rounds = []
+    rounds.forEach(round => {
+      userData.rounds.push({
+        ...round.data(),
+        roundId: round.id
+      })
+    })
+
+    return res.json(userData)
+
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ error: err.code })
+  }
+}
+
 // Get own user details
 const getAuthUserData = async (req, res) => {
   // Set empt object to store current user data in. Return at end
@@ -109,8 +136,18 @@ const getAuthUserData = async (req, res) => {
     // Get user likes
     const userLikes = await db.collection('likes').where('username', '==', req.body.username).get()
     userData.likes = []
-    userLikes.forEach(doc => {
-      userData.likes.push(doc.data())
+    userLikes.forEach(like => {
+      userData.likes.push(like.data())
+    })
+
+    // Get user notifications
+    const userNotifications = await db.collection('notifications').where('recipient', '==', req.body.username).get()
+    userData.notifications = []
+    userNotifications.forEach(notification => {
+      userData.notifications.push({
+        ...notification.data(),
+        notificationId: notification.id
+      })
     })
 
     return res.json(userData)
@@ -164,7 +201,7 @@ const uploadImage = async (req, res) => {
       })
 
       // After saving to storave bucket, get image URL and add it to user doc.
-      const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${process.env.FIREBASE_BUCKET}/o/${imageFileName}?alt=media`
+      const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${functions.config().my_keys.bucket_key ? functions.config().my_keys.bucket_key : process.env.FIREBASE_BUCKET}/o/${imageFileName}?alt=media`
       await db.doc(`/users/${req.body.username}`).update({ imageUrl })
 
       return res.json({ message: 'Image uploaded successfully' })
@@ -179,4 +216,9 @@ const uploadImage = async (req, res) => {
   }
 }
 
-module.exports = { registerUser, loginUser, uploadImage, addUserDetails, getAuthUserData }
+// TODO: Create mark notification function 
+const markNotificationsRead = async (req, res) => {
+
+}
+
+module.exports = { registerUser, loginUser, uploadImage, addUserDetails, getAuthUserData, getUserByUsername, markNotificationsRead }
